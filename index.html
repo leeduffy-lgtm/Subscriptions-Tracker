@@ -325,6 +325,23 @@
 
       saveSubscriptions(subs);
       clearForm();
+      // Handle navigation from home.html
+window.addEventListener("load", () => {
+  const hash = window.location.hash;
+
+  // Go to the "View All Subscriptions" section
+  if (hash === "#view") {
+    document.querySelector("section.card:nth-of-type(4)")
+      .scrollIntoView({ behavior: "smooth" });
+  }
+
+  // Go to the "Summary" section
+  if (hash === "#summary") {
+    document.querySelector("section.card:nth-of-type(3)")
+      .scrollIntoView({ behavior: "smooth" });
+  }
+});
+
       refreshUI();
     });
 
