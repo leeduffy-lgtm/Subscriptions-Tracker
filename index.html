@@ -5,8 +5,10 @@
   <title>Subscriptions Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#2563eb" />
+
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icons/icon-192.png" />
+
   <style>
     * { box-sizing: border-box; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     body { margin: 0; padding: 0; background: #f3f4f6; color: #111827; }
@@ -14,29 +16,404 @@
     header { text-align: center; margin-bottom: 16px; }
     header h1 { margin: 0; font-size: 1.8rem; }
     header p { margin: 4px 0 0; color: #6b7280; font-size: 0.95rem; }
+
     .card { background: #ffffff; border-radius: 12px; padding: 16px; margin-bottom: 16px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
     h2 { font-size: 1.2rem; margin: 0 0 12px; }
+
     form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; align-items: flex-end; }
     label { display: block; font-size: 0.8rem; color: #4b5563; margin-bottom: 4px; }
     input, select, textarea { width: 100%; padding: 6px 8px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 0.9rem; }
+
     textarea { resize: vertical; }
+
     button { padding: 8px 12px; border-radius: 999px; border: none; cursor: pointer; font-size: 0.9rem; font-weight: 500; }
+
     .btn-primary { background: #2563eb; color: white; }
     .btn-secondary { background: #e5e7eb; color: #111827; }
     .btn-danger { background: #ef4444; color: white; }
+
     .btn-install { background: #10b981; color: white; display: none; }
     .install-bar { display: flex; justify-content: center; margin-bottom: 8px; }
+
     .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
     table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
     th, td { padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
     th { background: #f9fafb; font-weight: 600; font-size: 0.8rem; color: #4b5563; }
+
     .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+
     .summary-item { padding: 12px; border-radius: 10px; background: #f9fafb; }
     .summary-label { font-size: 0.8rem; color: #6b7280; margin-bottom: 4px; }
     .summary-value { font-size: 1.1rem; font-weight: 600; }
+
     .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem;
              background: #e5e7eb; color: #374151; }
+
     .badge.monthly { background: #dbeafe; color: #1d4ed8; }
     .badge.yearly { background: #fef3c7; color: #92400e; }
-    .pill { display: inline-
+
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem;
+            background: #ecfeff; color: #0f766e; margin-left: 4px; }
+
+    .upcoming-item { padding: 8px 10px; border-radius: 8px; background: #eff6ff; margin-bottom: 6px; font-size: 0.85rem; }
+
+    .muted { color: #6b7280; font-size: 0.8rem; }
+
+    @media (max-width: 600px) { th, td { font-size: 0.8rem; } }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header>
+      <h1>Subscriptions Tracker</h1>
+      <p>Track monthly & yearly subscriptions, reminders, and total yearly spend.</p>
+    </header>
+
+    <div class="install-bar">
+      <button id="install-btn" class="btn-install">Install this app</button>
+    </div>
+    <section class="card">
+      <h2>Add / Edit Subscription</h2>
+      <form id="subscription-form">
+        <input type="hidden" id="sub-id" />
+
+        <div>
+          <label for="name">Name</label>
+          <input id="name" type="text" placeholder="Netflix, Spotify..." required />
+        </div>
+
+        <div>
+          <label for="amount">Amount</label>
+          <input id="amount" type="number" step="0.01" min="0" placeholder="9.99" required />
+        </div>
+
+        <div>
+          <label for="frequency">Frequency</label>
+          <select id="frequency">
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="nextPaymentDate">Next payment date</label>
+          <input id="nextPaymentDate" type="date" required />
+        </div>
+
+        <div>
+          <label for="reminderDays">Remind me (days before)</label>
+          <input id="reminderDays" type="number" min="0" value="2" />
+        </div>
+
+        <div>
+          <label for="paymentMethod">Payment method</label>
+          <input id="paymentMethod" type="text" placeholder="Direct Debit, Visa..." />
+        </div>
+
+        <div style="grid-column: 1 / -1;">
+          <label for="notes">Notes</label>
+          <textarea id="notes" rows="2" placeholder="Any extra details..."></textarea>
+        </div>
+
+        <div style="grid-column: 1 / -1; display:flex; gap:8px; justify-content:flex-end;">
+          <button type="button" class="btn-secondary" id="reset-btn">Clear</button>
+          <button type="submit" class="btn-primary" id="submit-btn">Save subscription</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Upcoming payments</h2>
+      <div id="upcoming-list" class="muted">No upcoming payments in your reminder windows.</div>
+    </section>
+
+    <section class="card">
+      <h2>Summary</h2>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="summary-label">Monthly total (approx)</div>
+          <div class="summary-value" id="monthly-total">£0.00</div>
+        </div>
+
+        <div class="summary-item">
+          <div class="summary-label">Yearly total</div>
+          <div class="summary-value" id="yearly-total">£0.00</div>
+        </div>
+
+        <div class="summary-item">
+          <div class="summary-label">Number of subscriptions</div>
+          <div class="summary-value" id="subs-count">0</div>
+        </div>
+      </div>
+    </section>
+    <section class="card">
+      <h2>All subscriptions</h2>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Amount</th>
+              <th>Next payment</th>
+              <th>Method</th>
+              <th>Notes</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="subscriptions-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "subscriptions-tracker-v1";
+
+    function loadSubscriptions() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        console.error("Error loading subscriptions", e);
+        return [];
+      }
+    }
+
+    function saveSubscriptions(subs) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(subs));
+    }
+
+    function formatCurrency(amount) {
+      if (isNaN(amount)) return "£0.00";
+      return "£" + amount.toFixed(2);
+    }
+
+    function daysUntil(dateStr) {
+      if (!dateStr) return null;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const target = new Date(dateStr + "T00:00:00");
+      if (isNaN(target.getTime())) return null;
+      const diffMs = target - today;
+      const oneDay = 24 * 60 * 60 * 1000;
+      return Math.round(diffMs / oneDay);
+    }
+
+    function updateSummary(subs) {
+      let monthly = 0;
+      let yearly = 0;
+      subs.forEach(sub => {
+        const amount = Number(sub.amount) || 0;
+        if (sub.frequency === "monthly") {
+          monthly += amount;
+          yearly += amount * 12;
+        } else if (sub.frequency === "yearly") {
+          yearly += amount;
+          monthly += amount / 12;
+        }
+      });
+      document.getElementById("monthly-total").textContent = formatCurrency(monthly);
+      document.getElementById("yearly-total").textContent = formatCurrency(yearly);
+      document.getElementById("subs-count").textContent = subs.length.toString();
+    }
+
+    function renderSubscriptions(subs) {
+      const tbody = document.getElementById("subscriptions-table-body");
+      tbody.innerHTML = "";
+      if (subs.length === 0) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 6;
+        td.className = "muted";
+        td.textContent = "No subscriptions added yet.";
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
+      subs.forEach(sub => {
+        const tr = document.createElement("tr");
+
+        const nameTd = document.createElement("td");
+        nameTd.innerHTML = `
+          <strong>${sub.name || "-"}</strong>
+          <div class="muted">
+            <span class="badge ${sub.frequency === "monthly" ? "monthly" : "yearly"}">
+              ${sub.frequency === "monthly" ? "Monthly" : "Yearly"}
+            </span>
+          </div>
+        `;
+        tr.appendChild(nameTd);
+
+        const amountTd = document.createElement("td");
+        amountTd.textContent = formatCurrency(Number(sub.amount) || 0);
+        tr.appendChild(amountTd);
+
+        const nextTd = document.createElement("td");
+        const d = daysUntil(sub.nextPaymentDate);
+        let pill = "";
+        if (d !== null && d >= 0 && d <= (Number(sub.reminderDays) || 0)) {
+          pill = `<span class="pill">due in ${d} day${d === 1 ? "" : "s"}</span>`;
+        }
+        nextTd.innerHTML = `
+          ${sub.nextPaymentDate || "-"}
+          <div class="muted">${pill}</div>
+        `;
+        tr.appendChild(nextTd);
+
+        const methodTd = document.createElement("td");
+        methodTd.textContent = sub.paymentMethod || "-";
+        tr.appendChild(methodTd);
+
+        const notesTd = document.createElement("td");
+        notesTd.textContent = sub.notes || "";
+        tr.appendChild(notesTd);
+
+        const actionsTd = document.createElement("td");
+        actionsTd.className = "actions";
+        actionsTd.innerHTML = `
+          <button class="btn-secondary" data-action="edit" data-id="${sub.id}">Edit</button>
+          <button class="btn-danger" data-action="delete" data-id="${sub.id}">Delete</button>
+        `;
+        tr.appendChild(actionsTd);
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderUpcoming(subs) {
+      const container = document.getElementById("upcoming-list");
+      container.innerHTML = "";
+
+      const upcoming = subs
+        .map(sub => {
+          const d = daysUntil(sub.nextPaymentDate);
+          const reminderDays = Number(sub.reminderDays) || 0;
+          return { ...sub, daysUntil: d, reminderDays };
+        })
+        .filter(sub => sub.daysUntil !== null && sub.daysUntil >= 0 && sub.daysUntil <= sub.reminderDays)
+        .sort((a, b) => a.daysUntil - b.daysUntil);
+
+      if (upcoming.length === 0) {
+        container.className = "muted";
+        container.textContent = "No upcoming payments in your reminder windows.";
+        return;
+      }
+
+      upcoming.forEach(sub => {
+        const div = document.createElement("div");
+        div.className = "upcoming-item";
+        div.innerHTML = `
+          <strong>${sub.name}</strong> – ${formatCurrency(Number(sub.amount) || 0)}
+          <div class="muted">
+            Due on ${sub.nextPaymentDate}
+            (${sub.daysUntil} day${sub.daysUntil === 1 ? "" : "s"} from now)
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function clearForm() {
+      document.getElementById("sub-id").value = "";
+      document.getElementById("name").value = "";
+      document.getElementById("amount").value = "";
+      document.getElementById("frequency").value = "monthly";
+      document.getElementById("nextPaymentDate").value = "";
+      document.getElementById("reminderDays").value = 2;
+      document.getElementById("paymentMethod").value = "";
+      document.getElementById("notes").value = "";
+      document.getElementById("submit-btn").textContent = "Save subscription";
+    }
+
+    document.getElementById("subscription-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const subs = loadSubscriptions();
+
+      const id = document.getElementById("sub-id").value || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
+      const name = document.getElementById("name").value.trim();
+      const amount = Number(document.getElementById("amount").value) || 0;
+      const frequency = document.getElementById("frequency").value;
+      const nextPaymentDate = document.getElementById("nextPaymentDate").value;
+      const reminderDays = Number(document.getElementById("reminderDays").value) || 0;
+      const paymentMethod = document.getElementById("paymentMethod").value.trim();
+      const notes = document.getElementById("notes").value.trim();
+
+      if (!name || !nextPaymentDate) {
+        alert("Please enter at least a name and next payment date.");
+        return;
+      }
+
+      const existingIndex = subs.findIndex(s => s.id === id);
+      const newSub = { id, name, amount, frequency, nextPaymentDate, reminderDays, paymentMethod, notes };
+
+      if (existingIndex >= 0) subs[existingIndex] = newSub;
+      else subs.push(newSub);
+
+      saveSubscriptions(subs);
+      clearForm();
+      refreshUI();
+    });
+
+    document.getElementById("reset-btn").addEventListener("click", clearForm);
+
+    document.getElementById("subscriptions-table-body").addEventListener("click", function (e) {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+
+      const action = btn.getAttribute("data-action");
+      const id = btn.getAttribute("data-id");
+
+      const subs = loadSubscriptions();
+      const sub = subs.find(s => s.id === id);
+      if (!sub) return;
+
+      if (action === "edit") {
+        document.getElementById("sub-id").value = sub.id;
+        document.getElementById("name").value = sub.name;
+        document.getElementById("amount").value = sub.amount;
+        document.getElementById("frequency").value = sub.frequency;
+        document.getElementById("nextPaymentDate").value = sub.nextPaymentDate;
+        document.getElementById("reminderDays").value = sub.reminderDays ?? 2;
+        document.getElementById("paymentMethod").value = sub.paymentMethod || "";
+        document.getElementById("notes").value = sub.notes || "";
+        document.getElementById("submit-btn").textContent = "Update subscription";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      if (action === "delete") {
+        if (confirm(`Delete subscription "${sub.name}"?`)) {
+          const updated = subs.filter(s => s.id !== id);
+          saveSubscriptions(updated);
+          refreshUI();
+        }
+      }
+    });
+
+    // Refresh UI on load
+    function refreshUI() {
+      const subs = loadSubscriptions();
+      updateSummary(subs);
+      renderSubscriptions(subs);
+      renderUpcoming(subs);
+    }
+
+    refreshUI();
+  </script>
+
+  <!-- PWA service worker -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("./service-worker.js")
+        .then(() => console.log("Service Worker Registered"))
+        .catch(err => console.error("Service worker registration failed:", err));
+    }
+  </script>
+
+</body>
+</html>
