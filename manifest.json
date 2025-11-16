@@ -1,7 +1,7 @@
 {
   "name": "Subscriptions Tracker",
   "short_name": "SubsTracker",
-  "start_url": "./home.html",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#f3f4f6",
   "theme_color": "#2563eb",
