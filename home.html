@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Subscriptions Tracker – Home</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: #f3f4f6;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 300px;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 24px;
+      color: #111827;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      background: #2563eb;
+      color: white;
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      margin: 12px 0;
+    }
+
+    .btn.secondary {
+      background: #10b981;
+    }
+
+    .btn.tertiary {
+      background: #6b7280;
+    }
+
+    .icon {
+      font-size: 1.3rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Subscriptions Tracker</h1>
+
+    <!-- Buttons with icons -->
+    <a href="index.html" class="btn">
+      <span class="icon">?</span>
+      Add / Delete Subscription
+    </a>
+
+    <a href="index.html#view" class="btn secondary">
+      <span class="icon">??</span>
+      View All Subscriptions
+    </a>
+
+    <a href="index.html#summary" class="btn tertiary">
+      <span class="icon">??</span>
+      View Summary
+    </a>
+  </div>
+</body>
+</html>
