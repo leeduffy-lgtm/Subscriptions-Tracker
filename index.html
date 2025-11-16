@@ -376,14 +376,7 @@ window.addEventListener("load", () => {
       }
     });
 
-    // PWA service worker
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker
-          .register("service-worker.js")
-          .catch(err => console.error("Service worker registration failed:", err));
-      });
-    }
+    
 
     // PWA install prompt
     let deferredPrompt = null;
@@ -411,5 +404,15 @@ window.addEventListener("load", () => {
 
     refreshUI();
   </script>
+  <script>
+  // PWA service worker registration
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register("./service-worker.js")
+      .then(() => console.log("Service Worker Registered"))
+      .catch(err => console.error("Service worker registration failed:", err));
+  }
+</script>
+
 </body>
 </html>
