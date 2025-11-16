@@ -1,5 +1,6 @@
 // Name of the cache
-const CACHE_NAME = "subtracker-cache-v1";
+const CACHE_NAME = "subtracker-cache-v2";
+
 
 // Files you want to cache
 const FILES_TO_CACHE = [
