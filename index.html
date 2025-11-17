@@ -65,7 +65,6 @@
     @media (max-width: 600px) { th, td { font-size: 0.8rem; } }
   </style>
 </head>
-
 <body>
   <div class="app">
     <header>
@@ -76,6 +75,7 @@
     <div class="install-bar">
       <button id="install-btn" class="btn-install">Install this app</button>
     </div>
+
     <section class="card">
       <h2>Add / Edit Subscription</h2>
       <form id="subscription-form">
@@ -150,6 +150,7 @@
         </div>
       </div>
     </section>
+
     <section class="card">
       <h2>All subscriptions</h2>
       <div style="overflow-x:auto;">
@@ -168,252 +169,257 @@
         </table>
       </div>
     </section>
-  </div>
+    <script>
+      const STORAGE_KEY = "subscriptions-tracker-v1";
 
-  <script>
-    const STORAGE_KEY = "subscriptions-tracker-v1";
-
-    function loadSubscriptions() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : [];
-      } catch (e) {
-        console.error("Error loading subscriptions", e);
-        return [];
-      }
-    }
-
-    function saveSubscriptions(subs) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(subs));
-    }
-
-    function formatCurrency(amount) {
-      if (isNaN(amount)) return "£0.00";
-      return "£" + amount.toFixed(2);
-    }
-
-    function daysUntil(dateStr) {
-      if (!dateStr) return null;
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const target = new Date(dateStr + "T00:00:00");
-      if (isNaN(target.getTime())) return null;
-      const diffMs = target - today;
-      const oneDay = 24 * 60 * 60 * 1000;
-      return Math.round(diffMs / oneDay);
-    }
-
-    function updateSummary(subs) {
-      let monthly = 0;
-      let yearly = 0;
-      subs.forEach(sub => {
-        const amount = Number(sub.amount) || 0;
-        if (sub.frequency === "monthly") {
-          monthly += amount;
-          yearly += amount * 12;
-        } else if (sub.frequency === "yearly") {
-          yearly += amount;
-          monthly += amount / 12;
+      function loadSubscriptions() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+          console.error("Error loading subscriptions", e);
+          return [];
         }
-      });
-      document.getElementById("monthly-total").textContent = formatCurrency(monthly);
-      document.getElementById("yearly-total").textContent = formatCurrency(yearly);
-      document.getElementById("subs-count").textContent = subs.length.toString();
-    }
-
-    function renderSubscriptions(subs) {
-      const tbody = document.getElementById("subscriptions-table-body");
-      tbody.innerHTML = "";
-      if (subs.length === 0) {
-        const tr = document.createElement("tr");
-        const td = document.createElement("td");
-        td.colSpan = 6;
-        td.className = "muted";
-        td.textContent = "No subscriptions added yet.";
-        tr.appendChild(td);
-        tbody.appendChild(tr);
-        return;
       }
 
-      subs.forEach(sub => {
-        const tr = document.createElement("tr");
+      function saveSubscriptions(subs) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(subs));
+      }
 
-        const nameTd = document.createElement("td");
-        nameTd.innerHTML = `
-          <strong>${sub.name || "-"}</strong>
-          <div class="muted">
-            <span class="badge ${sub.frequency === "monthly" ? "monthly" : "yearly"}">
-              ${sub.frequency === "monthly" ? "Monthly" : "Yearly"}
-            </span>
-          </div>
-        `;
-        tr.appendChild(nameTd);
+      function formatCurrency(amount) {
+        if (isNaN(amount)) return "£0.00";
+        return "£" + amount.toFixed(2);
+      }
 
-        const amountTd = document.createElement("td");
-        amountTd.textContent = formatCurrency(Number(sub.amount) || 0);
-        tr.appendChild(amountTd);
+      function daysUntil(dateStr) {
+        if (!dateStr) return null;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const target = new Date(dateStr + "T00:00:00");
+        if (isNaN(target.getTime())) return null;
+        const diffMs = target - today;
+        const oneDay = 24 * 60 * 60 * 1000;
+        return Math.round(diffMs / oneDay);
+      }
 
-        const nextTd = document.createElement("td");
-        const d = daysUntil(sub.nextPaymentDate);
-        let pill = "";
-        if (d !== null && d >= 0 && d <= (Number(sub.reminderDays) || 0)) {
-          pill = `<span class="pill">due in ${d} day${d === 1 ? "" : "s"}</span>`;
+      function updateSummary(subs) {
+        let monthly = 0;
+        let yearly = 0;
+
+        subs.forEach(sub => {
+          const amount = Number(sub.amount) || 0;
+
+          if (sub.frequency === "monthly") {
+            monthly += amount;
+            yearly += amount * 12;
+          } else if (sub.frequency === "yearly") {
+            yearly += amount;
+            monthly += amount / 12;
+          }
+        });
+
+        document.getElementById("monthly-total").textContent = formatCurrency(monthly);
+        document.getElementById("yearly-total").textContent = formatCurrency(yearly);
+        document.getElementById("subs-count").textContent = subs.length.toString();
+      }
+
+      function renderSubscriptions(subs) {
+        const tbody = document.getElementById("subscriptions-table-body");
+        tbody.innerHTML = "";
+
+        if (subs.length === 0) {
+          const tr = document.createElement("tr");
+          const td = document.createElement("td");
+          td.colSpan = 6;
+          td.className = "muted";
+          td.textContent = "No subscriptions added yet.";
+          tr.appendChild(td);
+          tbody.appendChild(tr);
+          return;
         }
-        nextTd.innerHTML = `
-          ${sub.nextPaymentDate || "-"}
-          <div class="muted">${pill}</div>
-        `;
-        tr.appendChild(nextTd);
 
-        const methodTd = document.createElement("td");
-        methodTd.textContent = sub.paymentMethod || "-";
-        tr.appendChild(methodTd);
+        subs.forEach(sub => {
+          const tr = document.createElement("tr");
 
-        const notesTd = document.createElement("td");
-        notesTd.textContent = sub.notes || "";
-        tr.appendChild(notesTd);
+          const nameTd = document.createElement("td");
+          nameTd.innerHTML = `
+            <strong>${sub.name || "-"}</strong>
+            <div class="muted">
+              <span class="badge ${sub.frequency === "monthly" ? "monthly" : "yearly"}">
+                ${sub.frequency === "monthly" ? "Monthly" : "Yearly"}
+              </span>
+            </div>
+          `;
+          tr.appendChild(nameTd);
 
-        const actionsTd = document.createElement("td");
-        actionsTd.className = "actions";
-        actionsTd.innerHTML = `
-          <button class="btn-secondary" data-action="edit" data-id="${sub.id}">Edit</button>
-          <button class="btn-danger" data-action="delete" data-id="${sub.id}">Delete</button>
-        `;
-        tr.appendChild(actionsTd);
+          const amountTd = document.createElement("td");
+          amountTd.textContent = formatCurrency(Number(sub.amount) || 0);
+          tr.appendChild(amountTd);
 
-        tbody.appendChild(tr);
-      });
-    }
-
-    function renderUpcoming(subs) {
-      const container = document.getElementById("upcoming-list");
-      container.innerHTML = "";
-
-      const upcoming = subs
-        .map(sub => {
+          const nextTd = document.createElement("td");
           const d = daysUntil(sub.nextPaymentDate);
-          const reminderDays = Number(sub.reminderDays) || 0;
-          return { ...sub, daysUntil: d, reminderDays };
-        })
-        .filter(sub => sub.daysUntil !== null && sub.daysUntil >= 0 && sub.daysUntil <= sub.reminderDays)
-        .sort((a, b) => a.daysUntil - b.daysUntil);
+          let pill = "";
 
-      if (upcoming.length === 0) {
-        container.className = "muted";
-        container.textContent = "No upcoming payments in your reminder windows.";
-        return;
+          if (d !== null && d >= 0 && d <= (Number(sub.reminderDays) || 0)) {
+            pill = `<span class="pill">due in ${d} day${d === 1 ? "" : "s"}</span>`;
+          }
+
+          nextTd.innerHTML = `
+            ${sub.nextPaymentDate || "-"}
+            <div class="muted">${pill}</div>
+          `;
+          tr.appendChild(nextTd);
+
+          const methodTd = document.createElement("td");
+          methodTd.textContent = sub.paymentMethod || "-";
+          tr.appendChild(methodTd);
+
+          const notesTd = document.createElement("td");
+          notesTd.textContent = sub.notes || "";
+          tr.appendChild(notesTd);
+
+          const actionsTd = document.createElement("td");
+          actionsTd.className = "actions";
+          actionsTd.innerHTML = `
+            <button class="btn-secondary" data-action="edit" data-id="${sub.id}">Edit</button>
+            <button class="btn-danger" data-action="delete" data-id="${sub.id}">Delete</button>
+          `;
+          tr.appendChild(actionsTd);
+
+          tbody.appendChild(tr);
+        });
       }
 
-      upcoming.forEach(sub => {
-        const div = document.createElement("div");
-        div.className = "upcoming-item";
-        div.innerHTML = `
-          <strong>${sub.name}</strong> – ${formatCurrency(Number(sub.amount) || 0)}
-          <div class="muted">
-            Due on ${sub.nextPaymentDate}
-            (${sub.daysUntil} day${sub.daysUntil === 1 ? "" : "s"} from now)
-          </div>
-        `;
-        container.appendChild(div);
-      });
-    }
+      function renderUpcoming(subs) {
+        const container = document.getElementById("upcoming-list");
+        container.innerHTML = "";
 
-    function clearForm() {
-      document.getElementById("sub-id").value = "";
-      document.getElementById("name").value = "";
-      document.getElementById("amount").value = "";
-      document.getElementById("frequency").value = "monthly";
-      document.getElementById("nextPaymentDate").value = "";
-      document.getElementById("reminderDays").value = 2;
-      document.getElementById("paymentMethod").value = "";
-      document.getElementById("notes").value = "";
-      document.getElementById("submit-btn").textContent = "Save subscription";
-    }
+        const upcoming = subs
+          .map(sub => ({
+            ...sub,
+            daysUntil: daysUntil(sub.nextPaymentDate),
+            reminderDays: Number(sub.reminderDays) || 0
+          }))
+          .filter(sub => sub.daysUntil !== null && sub.daysUntil >= 0 && sub.daysUntil <= sub.reminderDays)
+          .sort((a, b) => a.daysUntil - b.daysUntil);
 
-    document.getElementById("subscription-form").addEventListener("submit", function (e) {
-      e.preventDefault();
-      const subs = loadSubscriptions();
-
-      const id = document.getElementById("sub-id").value || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
-      const name = document.getElementById("name").value.trim();
-      const amount = Number(document.getElementById("amount").value) || 0;
-      const frequency = document.getElementById("frequency").value;
-      const nextPaymentDate = document.getElementById("nextPaymentDate").value;
-      const reminderDays = Number(document.getElementById("reminderDays").value) || 0;
-      const paymentMethod = document.getElementById("paymentMethod").value.trim();
-      const notes = document.getElementById("notes").value.trim();
-
-      if (!name || !nextPaymentDate) {
-        alert("Please enter at least a name and next payment date.");
-        return;
-      }
-
-      const existingIndex = subs.findIndex(s => s.id === id);
-      const newSub = { id, name, amount, frequency, nextPaymentDate, reminderDays, paymentMethod, notes };
-
-      if (existingIndex >= 0) subs[existingIndex] = newSub;
-      else subs.push(newSub);
-
-      saveSubscriptions(subs);
-      clearForm();
-      refreshUI();
-    });
-
-    document.getElementById("reset-btn").addEventListener("click", clearForm);
-
-    document.getElementById("subscriptions-table-body").addEventListener("click", function (e) {
-      const btn = e.target.closest("button");
-      if (!btn) return;
-
-      const action = btn.getAttribute("data-action");
-      const id = btn.getAttribute("data-id");
-
-      const subs = loadSubscriptions();
-      const sub = subs.find(s => s.id === id);
-      if (!sub) return;
-
-      if (action === "edit") {
-        document.getElementById("sub-id").value = sub.id;
-        document.getElementById("name").value = sub.name;
-        document.getElementById("amount").value = sub.amount;
-        document.getElementById("frequency").value = sub.frequency;
-        document.getElementById("nextPaymentDate").value = sub.nextPaymentDate;
-        document.getElementById("reminderDays").value = sub.reminderDays ?? 2;
-        document.getElementById("paymentMethod").value = sub.paymentMethod || "";
-        document.getElementById("notes").value = sub.notes || "";
-        document.getElementById("submit-btn").textContent = "Update subscription";
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
-
-      if (action === "delete") {
-        if (confirm(`Delete subscription "${sub.name}"?`)) {
-          const updated = subs.filter(s => s.id !== id);
-          saveSubscriptions(updated);
-          refreshUI();
+        if (upcoming.length === 0) {
+          container.className = "muted";
+          container.textContent = "No upcoming payments in your reminder windows.";
+          return;
         }
+
+        upcoming.forEach(sub => {
+          const div = document.createElement("div");
+          div.className = "upcoming-item";
+          div.innerHTML = `
+            <strong>${sub.name}</strong> – ${formatCurrency(Number(sub.amount) || 0)}
+            <div class="muted">
+              Due on ${sub.nextPaymentDate}
+              (${sub.daysUntil} day${sub.daysUntil === 1 ? "" : "s"} from now)
+            </div>
+          `;
+          container.appendChild(div);
+        });
       }
-    });
 
-    // Refresh UI on load
-    function refreshUI() {
-      const subs = loadSubscriptions();
-      updateSummary(subs);
-      renderSubscriptions(subs);
-      renderUpcoming(subs);
-    }
+      function clearForm() {
+        document.getElementById("sub-id").value = "";
+        document.getElementById("name").value = "";
+        document.getElementById("amount").value = "";
+        document.getElementById("frequency").value = "monthly";
+        document.getElementById("nextPaymentDate").value = "";
+        document.getElementById("reminderDays").value = 2;
+        document.getElementById("paymentMethod").value = "";
+        document.getElementById("notes").value = "";
+        document.getElementById("submit-btn").textContent = "Save subscription";
+      }
 
-    refreshUI();
-  </script>
+      document.getElementById("subscription-form").addEventListener("submit", function (e) {
+        e.preventDefault();
 
-  <!-- PWA service worker -->
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("./service-worker.js")
-        .then(() => console.log("Service Worker Registered"))
-        .catch(err => console.error("Service worker registration failed:", err));
-    }
-  </script>
+        const subs = loadSubscriptions();
+        const id =
+          document.getElementById("sub-id").value ||
+          (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
 
-</body>
+        const newSub = {
+          id,
+          name: document.getElementById("name").value.trim(),
+          amount: Number(document.getElementById("amount").value) || 0,
+          frequency: document.getElementById("frequency").value,
+          nextPaymentDate: document.getElementById("nextPaymentDate").value,
+          reminderDays: Number(document.getElementById("reminderDays").value) || 0,
+          paymentMethod: document.getElementById("paymentMethod").value.trim(),
+          notes: document.getElementById("notes").value.trim()
+        };
+
+        if (!newSub.name || !newSub.nextPaymentDate) {
+          alert("Please enter at least a name and next payment date.");
+          return;
+        }
+
+        const existingIndex = subs.findIndex(s => s.id === id);
+        if (existingIndex >= 0) subs[existingIndex] = newSub;
+        else subs.push(newSub);
+
+        saveSubscriptions(subs);
+        clearForm();
+        refreshUI();
+      });
+
+      document.getElementById("reset-btn").addEventListener("click", clearForm);
+
+      document.getElementById("subscriptions-table-body").addEventListener("click", function (e) {
+        const btn = e.target.closest("button");
+        if (!btn) return;
+
+        const action = btn.getAttribute("data-action");
+        const id = btn.getAttribute("data-id");
+        const subs = loadSubscriptions();
+        const sub = subs.find(s => s.id === id);
+
+        if (!sub) return;
+
+        if (action === "edit") {
+          document.getElementById("sub-id").value = sub.id;
+          document.getElementById("name").value = sub.name;
+          document.getElementById("amount").value = sub.amount;
+          document.getElementById("frequency").value = sub.frequency;
+          document.getElementById("nextPaymentDate").value = sub.nextPaymentDate;
+          document.getElementById("reminderDays").value = sub.reminderDays ?? 2;
+          document.getElementById("paymentMethod").value = sub.paymentMethod || "";
+          document.getElementById("notes").value = sub.notes || "";
+          document.getElementById("submit-btn").textContent = "Update subscription";
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        if (action === "delete") {
+          if (confirm(`Delete subscription "${sub.name}"?`)) {
+            saveSubscriptions(subs.filter(s => s.id !== id));
+            refreshUI();
+          }
+        }
+      });
+
+      function refreshUI() {
+        const subs = loadSubscriptions();
+        updateSummary(subs);
+        renderSubscriptions(subs);
+        renderUpcoming(subs);
+      }
+
+      refreshUI();
+    </script>
+    <!-- PWA: Register Service Worker -->
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("./service-worker.js")
+          .then(() => console.log("Service Worker Registered"))
+          .catch(err => console.error("Service worker registration failed:", err));
+      }
+    </script>
+
+  </body>
 </html>
