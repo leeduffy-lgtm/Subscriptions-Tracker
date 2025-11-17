@@ -1,54 +1,43 @@
-// Name of the cache
-const CACHE_NAME = "subtracker-cache-v2";
+/* Name of the cache */
+const CACHE_NAME = "subtracker-cache-v5";
 
-
-// Files you want to cache
+/* Files to cache (GitHub Pages absolute paths) */
 const FILES_TO_CACHE = [
-  "./",
-  "./index.html",
-  "./home.html",
-  "./manifest.json",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "/Subscriptions-Tracker/",
+  "/Subscriptions-Tracker/home.html",
+  "/Subscriptions-Tracker/index.html",
+  "/Subscriptions-Tracker/manifest.json",
+  "/Subscriptions-Tracker/icons/icon-192.png",
+  "/Subscriptions-Tracker/icons/icon-512.png"
 ];
 
-// Install – caches required files
+/* Install – cache required files */
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(FILES_TO_CACHE);
     })
   );
-  // Activate immediately without waiting
   self.skipWaiting();
 });
 
-// Activate – clears old caches
+/* Activate – clean old caches */
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
+    caches.keys().then((keys) =>
+      Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
+          if (key !== CACHE_NAME) return caches.delete(key);
         })
-      );
-    })
+      )
+    )
   );
-  // Take control of all clients immediately
   self.clients.claim();
 });
 
-// Fetch – network first, fallback to cache
+/* Fetch – network first, then cache fallback */
 self.addEventListener("fetch", (event) => {
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request);
-      })
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
