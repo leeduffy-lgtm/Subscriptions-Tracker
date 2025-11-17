@@ -226,28 +226,7 @@
       return;
     }
 
-    subs.forEach(sub => {
-      const tr = document.createElement("tr");
-
-      tr.innerHTML = `
-        <td>
-          <strong>${sub.name}</strong>
-          <div class="muted"><span class="badge ${sub.frequency}">${sub.frequency}</span></div>
-        </td>
-        <td>${formatCurrency(Number(sub.amount) || 0)}</td>
-        <td>
-          ${sub.nextPaymentDate}
-          <div class="muted">
-            ${(() => {
-              const d = daysUntil(sub.nextPaymentDate);
-              return d !== null && d >= 0 && d <= sub.reminderDays
-                ? `<span class="pill">due in ${d} day${d === 1 ? "" : "s"}</span>`
-                : "";
-            })()}
-          </div>
-        </td>
-        <td>${sub.paymentMethod || "-"}</td>
-        <td>${sub.notes || ""}</td>
+ <td>${sub.notes || ""}</td>
         <td class="actions">
           <button class="btn-secondary" data-action="edit" data-id="${sub.id}">Edit</button>
           <button class="btn-danger" data-action="delete" data-id="${sub.id}">Delete</button>
@@ -256,6 +235,150 @@
 
       tbody.appendChild(tr);
     });
+  }
+
+  function renderUpcoming(subs) {
+    const container = document.getElementById("upcoming-list");
+    container.innerHTML = "";
+
+    const upcoming = subs
+      .map(sub => ({
+        ...sub,
+        daysUntil: daysUntil(sub.nextPaymentDate),
+        reminderDays: Number(sub.reminderDays) || 0
+      }))
+      .filter(sub => sub.daysUntil !== null && sub.daysUntil >= 0 && sub.daysUntil <= sub.reminderDays)
+      .sort((a, b) => a.daysUntil - b.daysUntil);
+
+    if (upcoming.length === 0) {
+      container.className = "muted";
+      container.textContent = "No upcoming payments in your reminder windows.";
+      return;
+    }
+
+    upcoming.forEach(sub => {
+      const div = document.createElement("div");
+      div.className = "upcoming-item";
+      div.innerHTML = `
+        <strong>${sub.name}</strong> – ${formatCurrency(Number(sub.amount) || 0)}
+        <div class="muted">Due on ${sub.nextPaymentDate} (${sub.daysUntil} days)</div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function clearForm() {
+    document.getElementById("sub-id").value = "";
+    document.getElementById("name").value = "";
+    document.getElementById("amount").value = "";
+    document.getElementById("frequency").value = "monthly";
+    document.getElementById("nextPaymentDate").value = "";
+    document.getElementById("reminderDays").value = 2;
+    document.getElementById("paymentMethod").value = "";
+    document.getElementById("notes").value = "";
+    document.getElementById("submit-btn").textContent = "Save subscription";
+  }
+
+  document.getElementById("subscription-form").addEventListener("submit", e => {
+    e.preventDefault();
+
+    const subs = loadSubscriptions();
+    const id = document.getElementById("sub-id").value || crypto.randomUUID();
+
+    const newSub = {
+      id,
+      name: document.getElementById("name").value.trim(),
+      amount: Number(document.getElementById("amount").value) || 0,
+      frequency: document.getElementById("frequency").value,
+      nextPaymentDate: document.getElementById("nextPaymentDate").value,
+      reminderDays: Number(document.getElementById("reminderDays").value) || 0,
+      paymentMethod: document.getElementById("paymentMethod").value.trim(),
+      notes: document.getElementById("notes").value.trim()
+    };
+
+    if (!newSub.name || !newSub.nextPaymentDate) return alert("Enter name + date");
+
+    const existingIndex = subs.findIndex(s => s.id === id);
+    if (existingIndex >= 0) subs[existingIndex] = newSub;
+    else subs.push(newSub);
+
+    saveSubscriptions(subs);
+    clearForm();
+    refreshUI();
+  });
+
+  document.getElementById("subscriptions-table-body").addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+
+    const id = btn.getAttribute("data-id");
+    const action = btn.getAttribute("data-action");
+    const subs = loadSubscriptions();
+    const sub = subs.find(s => s.id === id);
+    if (!sub) return;
+
+    if (action === "edit") {
+      document.getElementById("sub-id").value = sub.id;
+      document.getElementById("name").value = sub.name;
+      document.getElementById("amount").value = sub.amount;
+      document.getElementById("frequency").value = sub.frequency;
+      document.getElementById("nextPaymentDate").value = sub.nextPaymentDate;
+      document.getElementById("reminderDays").value = sub.reminderDays;
+      document.getElementById("paymentMethod").value = sub.paymentMethod;
+      document.getElementById("notes").value = sub.notes;
+      document.getElementById("submit-btn").textContent = "Update subscription";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    if (action === "delete") {
+      if (confirm(`Delete ${sub.name}?`)) {
+        saveSubscriptions(subs.filter(s => s.id !== id));
+        refreshUI();
+      }
+    }
+  });
+
+        function refreshUI() {
+        const subs = loadSubscriptions();
+        updateSummary(subs);
+        renderSubscriptions(subs);
+        renderUpcoming(subs);
+      }
+
+      refreshUI();
+    </script>
+
+    <!-- FORCE PAGE TO LOAD AT TOP -->
+    <script>
+      window.history.scrollRestoration = "manual";
+
+      function forceTop() {
+        window.scrollTo(0, 0);
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+      }
+
+      window.addEventListener("load", () => {
+        forceTop();
+        setTimeout(forceTop, 100);
+      });
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") forceTop();
+      });
+    </script>
+
+    <!-- REGISTER SERVICE WORKER -->
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("./service-worker.js")
+          .then(() => console.log("Service Worker Registered"))
+          .catch(err => console.error("Service Worker failed:", err));
+      }
+    </script>
+  </body>
+</html>
   }
 
   function renderUpcoming(subs) {
