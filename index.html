@@ -359,50 +359,44 @@
     }
   });
 
-  function refreshUI() {
-    const subs = loadSubscriptions();
-    updateSummary(subs);
-    renderSubscriptions(subs);
-    renderUpcoming(subs);
-  }
+        function refreshUI() {
+        const subs = loadSubscriptions();
+        updateSummary(subs);
+        renderSubscriptions(subs);
+        renderUpcoming(subs);
+      }
 
-  refreshUI();
-</script>
-<!-- FORCE PAGE TO LOAD AT TOP -->
-<script>
-  window.history.scrollRestoration = "manual";
+      refreshUI();
+    </script>
 
-  function forceTop() {
-    window.scrollTo(0, 0);
-    document.body.scrollTop = 0;
-    document.documentElement.scrollTop = 0;
-  }
+    <!-- FORCE PAGE TO LOAD AT TOP -->
+    <script>
+      window.history.scrollRestoration = "manual";
 
-  // run immediately
-  forceTop();
+      function forceTop() {
+        window.scrollTo(0, 0);
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+      }
 
-  window.addEventListener("load", () => {
-    forceTop();
-    setTimeout(forceTop, 50);
-    setTimeout(forceTop, 150);
-    setTimeout(forceTop, 300);
-    setTimeout(forceTop, 600);
-  });
+      window.addEventListener("load", () => {
+        forceTop();
+        setTimeout(forceTop, 100);
+      });
 
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") forceTop();
-  });
-</script>
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") forceTop();
+      });
+    </script>
 
-<!-- REGISTER SERVICE WORKER -->
-<script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker
-      .register("./service-worker.js")
-      .then(() => console.log("Service Worker Registered"))
-      .catch(err => console.error("Service Worker failed:", err));
-  }
-</script>
-
-</body>
+    <!-- REGISTER SERVICE WORKER -->
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("./service-worker.js")
+          .then(() => console.log("Service Worker Registered"))
+          .catch(err => console.error("Service Worker failed:", err));
+      }
+    </script>
+  </body>
 </html>
