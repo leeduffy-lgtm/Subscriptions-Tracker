@@ -402,7 +402,7 @@
         }
       });
 
-      function refreshUI() {
+            function refreshUI() {
         const subs = loadSubscriptions();
         updateSummary(subs);
         renderSubscriptions(subs);
@@ -411,6 +411,15 @@
 
       refreshUI();
     </script>
+
+    <!-- Prevent auto-scroll to form -->
+    <script>
+      window.addEventListener("load", () => {
+        document.activeElement?.blur();
+        setTimeout(() => window.scrollTo(0, 0), 50);
+      });
+    </script>
+
     <!-- PWA: Register Service Worker -->
     <script>
       if ("serviceWorker" in navigator) {
@@ -420,13 +429,6 @@
           .catch(err => console.error("Service worker registration failed:", err));
       }
     </script>
-<script>
-  window.history.scrollRestoration = "manual";
-  window.addEventListener("load", () => {
-    window.scrollTo(0, 0);
-  });
-</script>
-
 
   </body>
 </html>
