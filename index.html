@@ -402,7 +402,7 @@
         }
       });
 
-            function refreshUI() {
+                  function refreshUI() {
         const subs = loadSubscriptions();
         updateSummary(subs);
         renderSubscriptions(subs);
@@ -415,8 +415,14 @@
     <!-- Prevent auto-scroll to form -->
     <script>
       window.addEventListener("load", () => {
-        document.activeElement?.blur();
-        setTimeout(() => window.scrollTo(0, 0), 50);
+        // remove autofocus
+        if (document.activeElement) document.activeElement.blur();
+
+        // scroll to top
+        window.scrollTo(0, 0);
+
+        // scroll again after layout paints
+        setTimeout(() => window.scrollTo(0, 0), 150);
       });
     </script>
 
