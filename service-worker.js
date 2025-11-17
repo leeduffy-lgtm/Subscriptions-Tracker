@@ -1,10 +1,8 @@
 /* Name of the cache */
-const CACHE_NAME = "subtracker-cache-v5";
+const CACHE_NAME = "subtracker-cache-clean";
 
-/* Files to cache (GitHub Pages absolute paths) */
+/* Files to cache (minimal!) */
 const FILES_TO_CACHE = [
-  "/Subscriptions-Tracker/",
-  "/Subscriptions-Tracker/home.html",
   "/Subscriptions-Tracker/index.html",
   "/Subscriptions-Tracker/manifest.json",
   "/Subscriptions-Tracker/icons/icon-192.png",
@@ -21,21 +19,17 @@ self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
-/* Activate – clean old caches */
+/* Activate – delete all old caches */
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) return caches.delete(key);
-        })
-      )
+      Promise.all(keys.map((key) => caches.delete(key)))
     )
   );
   self.clients.claim();
 });
 
-/* Fetch – network first, then cache fallback */
+/* Fetch – always try network first */
 self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(event.request).catch(() => caches.match(event.request))
