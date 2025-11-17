@@ -1,71 +1,67 @@
- if (action === "edit") {
-          document.getElementById("sub-id").value = sub.id;
-          document.getElementById("name").value = sub.name;
-          document.getElementById("amount").value = sub.amount;
-          document.getElementById("frequency").value = sub.frequency;
-          document.getElementById("nextPaymentDate").value = sub.nextPaymentDate;
-          document.getElementById("reminderDays").value = sub.reminderDays ?? 2;
-          document.getElementById("paymentMethod").value = sub.paymentMethod || "";
-          document.getElementById("notes").value = sub.notes || "";
-          document.getElementById("submit-btn").textContent = "Update subscription";
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Subscriptions Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#2563eb" />
 
-        if (action === "delete") {
-          if (confirm(`Delete subscription "${sub.name}"?`)) {
-            saveSubscriptions(subs.filter(s => s.id !== id));
-            refreshUI();
-          }
-        }
-      });
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icons/icon-192.png" />
 
-                  function refreshUI() {
-        const subs = loadSubscriptions();
-        updateSummary(subs);
-        renderSubscriptions(subs);
-        renderUpcoming(subs);
-      }
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { margin: 0; padding: 0; background: #f3f4f6; color: #111827; }
+    .app { max-width: 900px; margin: 0 auto; padding: 16px; }
+    header { text-align: center; margin-bottom: 16px; }
+    header h1 { margin: 0; font-size: 1.8rem; }
+    header p { margin: 4px 0 0; color: #6b7280; font-size: 0.95rem; }
 
-      refreshUI();
-    </script>
+    .card { background: #ffffff; border-radius: 12px; padding: 16px; margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
 
-    <!-- Prevent auto-scroll to form -->
-    <script>
-      window.addEventListener("load", () => {
-        // remove autofocus
-        if (document.activeElement) document.activeElement.blur();
+    h2 { font-size: 1.2rem; margin: 0 0 12px; }
 
-        // scroll to top
-        window.scrollTo(0, 0);
+    form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; align-items: flex-end; }
+    label { display: block; font-size: 0.8rem; color: #4b5563; margin-bottom: 4px; }
+    input, select, textarea { width: 100%; padding: 6px 8px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 0.9rem; }
+    textarea { resize: vertical; }
 
-        // scroll again after layout paints
-        setTimeout(() => window.scrollTo(0, 0), 150);
-      });
-    </script>
+    button { padding: 8px 12px; border-radius: 999px; border: none; cursor: pointer; font-size: 0.9rem; font-weight: 500; }
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-secondary { background: #e5e7eb; color: #111827; }
+    .btn-danger { background: #ef4444; color: white; }
 
-    <!-- PWA: Register Service Worker -->
-    <script>
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker
-          .register("./service-worker.js")
-          .then(() => console.log("Service Worker Registered"))
-          .catch(err => console.error("Service worker registration failed:", err));
-      }
-    </script>
+    .actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
-  </body>
-</html>
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+    th { background: #f9fafb; font-weight: 600; font-size: 0.8rem; color: #4b5563; }
+
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+    .summary-item { padding: 12px; border-radius: 10px; background: #f9fafb; }
+    .summary-label { font-size: 0.8rem; color: #6b7280; margin-bottom: 4px; }
+    .summary-value { font-size: 1.1rem; font-weight: 600; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem;
+             background: #e5e7eb; color: #374151; }
+    .badge.monthly { background: #dbeafe; color: #1d4ed8; }
+    .badge.yearly  { background: #fef3c7; color: #92400e; }
+
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem;
+            background: #ecfeff; color: #0f766e; margin-left: 4px; }
+
+    .upcoming-item { padding: 8px 10px; border-radius: 8px; background: #eff6ff; margin-bottom: 6px; font-size: 0.85rem; }
+    .muted { color: #6b7280; font-size: 0.8rem; }
+  </style>
+</head>
+
 <body>
   <div class="app">
     <header>
       <h1>Subscriptions Tracker</h1>
       <p>Track monthly & yearly subscriptions, reminders, and total yearly spend.</p>
     </header>
-
-    <div class="install-bar">
-      <button id="install-btn" class="btn-install">Install this app</button>
-    </div>
-
     <section class="card">
       <h2>Add / Edit Subscription</h2>
       <form id="subscription-form">
@@ -226,7 +222,36 @@
       return;
     }
 
- <td>${sub.notes || ""}</td>
+    subs.forEach(sub => {
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>
+          <strong>${sub.name}</strong>
+          <div class="muted">
+            <span class="badge ${sub.frequency === "monthly" ? "monthly" : "yearly"}">
+              ${sub.frequency === "monthly" ? "Monthly" : "Yearly"}
+            </span>
+          </div>
+        </td>
+
+        <td>${formatCurrency(Number(sub.amount) || 0)}</td>
+
+        <td>
+          ${sub.nextPaymentDate}
+          <div class="muted">
+            ${
+              daysUntil(sub.nextPaymentDate) !== null &&
+              daysUntil(sub.nextPaymentDate) <= (sub.reminderDays || 0)
+                ? `<span class="pill">due in ${daysUntil(sub.nextPaymentDate)} days</span>`
+                : ""
+            }
+          </div>
+        </td>
+
+        <td>${sub.paymentMethod || "-"}</td>
+        <td>${sub.notes || ""}</td>
+
         <td class="actions">
           <button class="btn-secondary" data-action="edit" data-id="${sub.id}">Edit</button>
           <button class="btn-danger" data-action="delete" data-id="${sub.id}">Delete</button>
@@ -261,7 +286,9 @@
       div.className = "upcoming-item";
       div.innerHTML = `
         <strong>${sub.name}</strong> – ${formatCurrency(Number(sub.amount) || 0)}
-        <div class="muted">Due on ${sub.nextPaymentDate} (${sub.daysUntil} days)</div>
+        <div class="muted">
+          Due on ${sub.nextPaymentDate} (${sub.daysUntil} days)
+        </div>
       `;
       container.appendChild(div);
     });
@@ -296,152 +323,11 @@
       notes: document.getElementById("notes").value.trim()
     };
 
-    if (!newSub.name || !newSub.nextPaymentDate) return alert("Enter name + date");
-
-    const existingIndex = subs.findIndex(s => s.id === id);
-    if (existingIndex >= 0) subs[existingIndex] = newSub;
-    else subs.push(newSub);
-
-    saveSubscriptions(subs);
-    clearForm();
-    refreshUI();
-  });
-
-  document.getElementById("subscriptions-table-body").addEventListener("click", e => {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-
-    const id = btn.getAttribute("data-id");
-    const action = btn.getAttribute("data-action");
-    const subs = loadSubscriptions();
-    const sub = subs.find(s => s.id === id);
-    if (!sub) return;
-
-    if (action === "edit") {
-      document.getElementById("sub-id").value = sub.id;
-      document.getElementById("name").value = sub.name;
-      document.getElementById("amount").value = sub.amount;
-      document.getElementById("frequency").value = sub.frequency;
-      document.getElementById("nextPaymentDate").value = sub.nextPaymentDate;
-      document.getElementById("reminderDays").value = sub.reminderDays;
-      document.getElementById("paymentMethod").value = sub.paymentMethod;
-      document.getElementById("notes").value = sub.notes;
-      document.getElementById("submit-btn").textContent = "Update subscription";
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    if (action === "delete") {
-      if (confirm(`Delete ${sub.name}?`)) {
-        saveSubscriptions(subs.filter(s => s.id !== id));
-        refreshUI();
-      }
-    }
-  });
-
-        function refreshUI() {
-        const subs = loadSubscriptions();
-        updateSummary(subs);
-        renderSubscriptions(subs);
-        renderUpcoming(subs);
-      }
-
-      refreshUI();
-    </script>
-
-    <!-- FORCE PAGE TO LOAD AT TOP -->
-    <script>
-      window.history.scrollRestoration = "manual";
-
-      function forceTop() {
-        window.scrollTo(0, 0);
-        document.body.scrollTop = 0;
-        document.documentElement.scrollTop = 0;
-      }
-
-      window.addEventListener("load", () => {
-        forceTop();
-        setTimeout(forceTop, 100);
-      });
-
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") forceTop();
-      });
-    </script>
-
-    <!-- REGISTER SERVICE WORKER -->
-    <script>
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker
-          .register("./service-worker.js")
-          .then(() => console.log("Service Worker Registered"))
-          .catch(err => console.error("Service Worker failed:", err));
-      }
-    </script>
-  </body>
-</html>
-  }
-
-  function renderUpcoming(subs) {
-    const container = document.getElementById("upcoming-list");
-    container.innerHTML = "";
-
-    const upcoming = subs
-      .map(sub => ({
-        ...sub,
-        daysUntil: daysUntil(sub.nextPaymentDate),
-        reminderDays: Number(sub.reminderDays) || 0
-      }))
-      .filter(sub => sub.daysUntil !== null && sub.daysUntil >= 0 && sub.daysUntil <= sub.reminderDays)
-      .sort((a, b) => a.daysUntil - b.daysUntil);
-
-    if (upcoming.length === 0) {
-      container.className = "muted";
-      container.textContent = "No upcoming payments in your reminder windows.";
+    if (!newSub.name || !newSub.nextPaymentDate) {
+      alert("Please enter name and date.");
       return;
     }
 
-    upcoming.forEach(sub => {
-      const div = document.createElement("div");
-      div.className = "upcoming-item";
-      div.innerHTML = `
-        <strong>${sub.name}</strong> – ${formatCurrency(Number(sub.amount) || 0)}
-        <div class="muted">Due on ${sub.nextPaymentDate} (${sub.daysUntil} days)</div>
-      `;
-      container.appendChild(div);
-    });
-  }
-
-  function clearForm() {
-    document.getElementById("sub-id").value = "";
-    document.getElementById("name").value = "";
-    document.getElementById("amount").value = "";
-    document.getElementById("frequency").value = "monthly";
-    document.getElementById("nextPaymentDate").value = "";
-    document.getElementById("reminderDays").value = 2;
-    document.getElementById("paymentMethod").value = "";
-    document.getElementById("notes").value = "";
-    document.getElementById("submit-btn").textContent = "Save subscription";
-  }
-
-  document.getElementById("subscription-form").addEventListener("submit", e => {
-    e.preventDefault();
-
-    const subs = loadSubscriptions();
-    const id = document.getElementById("sub-id").value || crypto.randomUUID();
-
-    const newSub = {
-      id,
-      name: document.getElementById("name").value.trim(),
-      amount: Number(document.getElementById("amount").value) || 0,
-      frequency: document.getElementById("frequency").value,
-      nextPaymentDate: document.getElementById("nextPaymentDate").value,
-      reminderDays: Number(document.getElementById("reminderDays").value) || 0,
-      paymentMethod: document.getElementById("paymentMethod").value.trim(),
-      notes: document.getElementById("notes").value.trim()
-    };
-
-    if (!newSub.name || !newSub.nextPaymentDate) return alert("Enter name + date");
-
     const existingIndex = subs.findIndex(s => s.id === id);
     if (existingIndex >= 0) subs[existingIndex] = newSub;
     else subs.push(newSub);
@@ -455,9 +341,9 @@
     const btn = e.target.closest("button");
     if (!btn) return;
 
+    const subs = loadSubscriptions();
     const id = btn.getAttribute("data-id");
     const action = btn.getAttribute("data-action");
-    const subs = loadSubscriptions();
     const sub = subs.find(s => s.id === id);
     if (!sub) return;
 
@@ -482,44 +368,24 @@
     }
   });
 
-        function refreshUI() {
-        const subs = loadSubscriptions();
-        updateSummary(subs);
-        renderSubscriptions(subs);
-        renderUpcoming(subs);
-      }
+  function refreshUI() {
+    const subs = loadSubscriptions();
+    updateSummary(subs);
+    renderSubscriptions(subs);
+    renderUpcoming(subs);
+  }
 
-      refreshUI();
-    </script>
+  refreshUI();
+</script>
+<!-- PWA: Register Service Worker -->
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register("./service-worker.js")
+      .then(() => console.log("Service Worker Registered"))
+      .catch(err => console.error("Service worker registration failed:", err));
+  }
+</script>
 
-    <!-- FORCE PAGE TO LOAD AT TOP -->
-    <script>
-      window.history.scrollRestoration = "manual";
-
-      function forceTop() {
-        window.scrollTo(0, 0);
-        document.body.scrollTop = 0;
-        document.documentElement.scrollTop = 0;
-      }
-
-      window.addEventListener("load", () => {
-        forceTop();
-        setTimeout(forceTop, 100);
-      });
-
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") forceTop();
-      });
-    </script>
-
-    <!-- REGISTER SERVICE WORKER -->
-    <script>
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker
-          .register("./service-worker.js")
-          .then(() => console.log("Service Worker Registered"))
-          .catch(err => console.error("Service Worker failed:", err));
-      }
-    </script>
-  </body>
+</body>
 </html>
